@@ -1,0 +1,59 @@
+.file-content{
+    position: relative;
+    }
+
+.file-list{
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: auto;
+    z-index: 2;
+    }
+.file-list:after{
+    clear: both;
+    }
+.file-list:after{
+    clear: both;
+    }
+
+.file-item{
+    width: 150px;
+    height: 100px;
+    font-size: 20px;
+    transition: 0.3s;
+    cursor: pointer;
+    border-radius: 4px;
+    float: left;
+    }
+.file-item:hover,.file-item.active{
+    background: #03d1ff;
+    }
+.file-item:hover span,.file-item.active span{
+    color: #ffffff;
+    }
+
+
+.file-item span{
+    display: block;
+    color: #000000;
+    text-align: center;
+    }
+
+.file-item-icon{
+    color: #787878;
+    line-height: 70px;
+    font-size: 45px;
+    }
+
+.file-item-name{
+    line-height: 30px;
+    font-size: 14px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 150px;
+    padding: 0 10px;
+    }
+

@@ -1,0 +1,19 @@
+.app-title {
+    text-align: center;
+    font-size: 20px;
+    }
+
+.app-title .title {
+    display: inline-block;
+    }
+.app-title .cloud{
+    font-size: 70px;
+    margin-right: 10px;
+    }
+.Cloud{
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    }

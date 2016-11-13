@@ -1,0 +1,38 @@
+.right-menu {
+    position: absolute;
+    left: 200px;
+    top: 200px;
+    z-index: 100;
+    }
+.right-menu li {
+    line-height: 30px;
+    width: 150px;
+    border: 1px solid #cccccc;
+    border-bottom: none;
+    text-indent: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+    background: #ffffff;
+    }
+.right-menu li:first-child{
+    border-radius: 10px 10px 0 0;
+    }
+
+.right-menu li:last-child{
+    border-bottom: 1px solid #cccccc;
+    border-radius: 0 0 10px 10px;
+    }
+
+.right-menu li:hover{
+    background: #00B7FF;
+    color: #ffffff;
+    }
+.right-menu li.forbidden{
+    cursor: not-allowed;
+    background: #ffffff;
+    color: #bbbbbb;
+    }
+
+.fa{
+    margin-right: 10px;
+    }
