@@ -43,13 +43,20 @@ function getIcon(ext, isFolder) {
 var FileItem=React.createClass({
     //组件渲染
     render(){
-        const {obj,active} = this.props;
-        const {ext,name,isFolder} = obj;
-        const type=getIcon(ext, isFolder);
-        const act=name===active //被激活
+        const {obj,active,cutName} = this.props,
+            {ext,name,isFolder} = obj,
+            type=getIcon(ext, isFolder),
+            act=name===active,//被激活
+            cut=name===cutName;
+        var clazz='file-item ';
+        if (act)
+            clazz+='active ';
+        if (cut)
+            clazz+='cut';
+
         return (
             <li
-                className={act?"file-item active":"file-item"}
+                className={clazz}
                 onClick={this.handleClick}
                 onMouseDown={this.handleMouseDown}
             >
@@ -62,9 +69,9 @@ var FileItem=React.createClass({
     },
     //单击事件
     handleClick(){
-        const {obj,onPick} = this.props;
-        const {path,name,isFolder} = obj;
-        onPick(name);
+        const {obj} = this.props;
+        const {path,isFolder} = obj;
+        //onPick(name);
         if (isFolder)
             hashHistory.push(path);
         else
@@ -80,13 +87,12 @@ var FileItem=React.createClass({
     }
 });
 
-
 /**
  * FileList组件
  */
 var FileList=React.createClass({
     render(){
-        const {path,file,loading,active,onPick} = this.props;
+        const {path,file,loading,active,onPick,cutName} = this.props;
         //返回按钮
         const backButton=(<li
             className="file-item"
@@ -110,6 +116,7 @@ var FileList=React.createClass({
                         key={path+'-'+o.name}
                         active={active}
                         onPick={onPick}
+                        cutName={cutName}
                     />
                 )
             })
@@ -119,7 +126,7 @@ var FileList=React.createClass({
         return (
             <div className="file-content">
                 <ul className="file-list">
-                    {path[0]===""||loading ? '' : backButton}
+                    {path[0]==="" || loading ? '' : backButton}
                     {nodes}
                 </ul>
             </div>

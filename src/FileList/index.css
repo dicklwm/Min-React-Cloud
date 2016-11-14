@@ -27,11 +27,17 @@
     border-radius: 4px;
     float: left;
     }
-.file-item:hover,.file-item.active{
+.file-item:hover,
+.file-item.active{
     background: #03d1ff;
     }
-.file-item:hover span,.file-item.active span{
+.file-item:hover span,
+.file-item.active span{
     color: #ffffff;
+    }
+
+.file-item.cut{
+    opacity:.3;
     }
 
 

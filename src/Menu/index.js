@@ -5,15 +5,16 @@ import React from 'react';
 import './index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import ActionModel from '../ActionModel'
-import {message} from 'antd';
+import {message,Modal} from 'antd';
 import {rename,mkdir,remove} from '../api';
+import {File,CopyItem} from '../backboneModel/model';
 
 var Menu=React.createClass({
     getInitialState(){
         return {
             showActionModel: false,
             newValue: '',
-            action: 'newFolder'
+            action: '',
         }
     },
     render(){
@@ -56,6 +57,7 @@ var Menu=React.createClass({
                     visible={this.state.showActionModel}
                     onCancel={(e)=>this.hideModel()}
                     onChange={(e)=>this.setState({newValue:e.target.value})}
+                    onOk={this.handleOk}
                 />
             </div>
 
@@ -63,57 +65,169 @@ var Menu=React.createClass({
     },
     //处理菜单点击
     handleMenuClick(e, action){
-        var hasPicked=!!this.props.active;
-        console.log(action,hasPicked);
-        if (hasPicked) {
-            switch (action) {
-                case 'newFolder':
-                case 'rename':
-                    this.setState({action:action});
-                    this.showModel();
-                    break;
-                case 'delete':
-                    break;
-                case 'cut':
-                    break;
-                case 'copy':
-                    break;
-                case 'paste':
-                    break;
-                default:
-                    break;
-            }
-        }
-        else {
-            switch (action) {
-                case 'newFolder':
-                    this.showModel();
-                    break;
-                case 'paste':
-                    break;
-                default:
-                    break;
-            }
+        console.log('handleMenuClick', action);
+        this.setState({action: action});
+        switch (action) {
+            case 'newFolder':
+                this.setState({newValue: "新建文件夹"});
+                this.showModel();
+                break;
+            case 'rename':
+                this.setState({newValue: this.props.active})
+                this.showModel();
+                break;
+            case 'delete':
+                Modal.confirm({
+                    title: '删除操作',
+                    content: '删除选中文件，是否确认要删除文件？',
+                    onOk: this.handleOk,
+                    onCancel: function () {
+                    }
+                });
+                break;
+            case 'cut':
+                console.log('cut start');
+                var activeItem=File.findWhere({name: this.props.active}).toJSON();
+                CopyItem.set(activeItem);
+                this.props.setCutName(this.props.active);
+                message.success('将' + this.props.active + '放入剪贴板成功', 5);
+                this.afterFinished();
+                break;
+            case 'copy':
+                console.log('copy start');
+                var activeItem=File.findWhere({name: this.props.active}).toJSON();
+                CopyItem.set(activeItem);
+                message.success('将' + this.props.active + '放入剪贴板成功', 5);
+                this.props.setCutName('');
+                this.afterFinished();
+                break;
+            case 'paste':
+                //判断是否为剪切
+                if (this.props.cutName!='') {
+                    File.remove(File.findWhere(CopyItem.toJSON()));
+                    //调接口
+                    File.add(CopyItem.toJSON());
+                    this.props.setCutName('');
+                    CopyItem.clear();
+                    message.success('剪切成功', 5);
+                } else {
+                    //判断是否已经存在这个复制项了
+                    if (File.findWhere(CopyItem.toJSON())) {
+                        var time=1;
+                        /****处理存在相同的文件名****/
+                        var obj=CopyItem.toJSON(),
+                            name=obj.name.split('.')[0],
+                            path=obj.path.split('.')[0];
+                        //直到找不到相同的为止
+                        while (File.findWhere(obj)) {
+                            obj['name']=name + '(' + time + ')' + obj.ext;
+                            obj['path']=path + '(' + time + ')' + obj.ext;
+                            time++;
+                        }
+                        //调接口
+                        File.add(obj);
+                    } else {
+                        //调接口
+                        File.add(CopyItem);
+                    }
+                    message.success('复制成功', 5);
+                }
+                this.afterFinished();
+                break;
+            default:
+                break;
         }
         e.preventDefault();
         e.stopPropagation();
     },
+    //处理Ok
+    handleOk(){
+        const {action,newValue} = this.state;
+        console.log(action, newValue);
+        switch (action) {
+            case 'newFolder':
+                this.newFolder(newValue);
+                break;
+            case 'rename':
+                this.rename(newValue);
+                break;
+            case 'delete':
+                this.deleteFile();
+                break;
+        }
+    },
+    //新建文件夹方法
     newFolder(name){
         const {path,active} = this.props;
-        var that = this
-        var path = path.join('/')+'/'+active;
+        var that=this,
+            paths=path.join('/') + '/' + active,
+        //处理相同文件夹名的变量
+            folderName=name,
+            time=1;
+        //如果找到相同的文件夹名
+        /****处理存在相同的文件名****/
+        //直到找不到相同的为止
+        while (File.findWhere({name: folderName})) {
+            folderName=name + '(' + time + ')';
+            time++;
+        }
+        //在新建文件夹之前判断是否有同名
         mkdir({
-            path:path,
-            name:name
-        },function (res) {
+            path: paths,
+            name: folderName
+        }, function (res) {
+            console.log(res);
             //试一下用backbone
-            var file = that.state.file
-            file.push(res)
-            that.setState({file})
-            //that.pickItem(name)
-            that.hideModel();
-            message.success('操作成功');
+            //---------------Backbone------------------
+            //Backbone推入
+            File.push(res);
+            //完成后的操作
+            that.afterFinished();
+            message.success('新建文件夹 ' + res.name + ' 成功', 5);
+        }, function (res) {
+            console.log(res);
         })
+    },
+    //重命名方法
+    rename(newName){
+        const {path,active} = this.props;
+        var that=this,
+            paths=path.join('/') + '/' + active,
+            query={name: newName, path: paths};
+        rename(query, function (res) {
+            console.log(res);
+            //-----------------Backbone--------------------
+            //先用findWhere找到那个Model然后set它
+            File.findWhere({name: active}).set(res);
+            //完成后的操作
+            that.afterFinished();
+            message.success('重命名' + active + '-->' + res.name + '成功', 5);
+        }, function () {
+            message.error('重命名失败，文件名有重复');
+        })
+    },
+    //删除方法
+    deleteFile(){
+        const {path,active} = this.props;
+        var that=this;
+        var paths=path.join('/') + '/' + active;
+        var query={path: paths};
+        remove(query, function (res) {
+            console.log(res);
+            //------------Backbone---------------
+            File.remove(File.findWhere({name: active}));
+            //完成后的操作
+            that.afterFinished();
+            message.success('删除 ' + active + ' 成功', 5);
+        })
+    },
+    //复制方法
+    copyFile(){
+
+    },
+    //剪切方法
+    cutFile(){
+
     },
     //显示模态框
     showModel(){
@@ -126,6 +240,21 @@ var Menu=React.createClass({
         this.setState({
             showActionModel: false
         })
+    },
+    //清除newValue
+    clearNewValue(){
+        this.setState({
+            newValue: ''
+        })
+    },
+    //完成操作后
+    afterFinished(){
+        //清除新文件名
+        this.clearNewValue();
+        //隐藏模态框和菜单
+        this.hideModel();
+        this.props.hideMenu();
+        this.props.unPickItem();
     }
 })
 

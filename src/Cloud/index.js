@@ -9,6 +9,7 @@ import Nav from '../Nav';
 import FileList from '../FileList';
 import Menu from '../Menu';
 import {getFileList} from '../api';
+import {File,CopyItem} from '../backboneModel/model';
 
 var Cloud=React.createClass({
 
@@ -18,8 +19,8 @@ var Cloud=React.createClass({
             file: [],
             loading: false,
             active: '',
-            cutItem: null,
-            copyItem: null,
+            copyItem: {},
+            cutName:'',
             menu: {
                 x: 0,
                 y: 0,
@@ -30,18 +31,41 @@ var Cloud=React.createClass({
     },
     //组件加载完成
     componentDidMount(){
+        var that=this;
         const {params} = this.props;
         const {splat} = params;
         this.getFiles(splat);
+        /*----------------Backbone-----------------------*/
+        //全局调试用
+        window.FileGG=File;
+        window.CopyItemGG=CopyItem;
+        File.on('reset add remove change', function () {
+            var obj={};
+            obj['file']=File.toJSON();
+            that.setState(obj);
+        });
+        CopyItem.on('change', function () {
+            var obj={};
+            console.log('Backbone CopyItemModel Change');
+            obj['copyItem']=CopyItem.toJSON();
+            that.setState(obj);
+        });
     },
-    //组件Props改变后
+    //组件Props改变后，更换地址后刷新Files
     componentWillReceiveProps(nextProps){
         const {params} = nextProps;
         const {splat} = params;
         this.getFiles(splat);
+        this.unPickItem();
     },
     //渲染
     render(){
+        //判断是否copyItem是否为空对象
+        var isPaste;
+        for (var i in this.state.copyItem) {
+            isPaste=true;
+            break;
+        }
         return (
             <div className="Cloud"
                  onContextMenu={(e)=>e.preventDefault()}
@@ -58,14 +82,18 @@ var Cloud=React.createClass({
                     active={this.state.active}
                     loading={this.state.loading}
                     onPick={(name)=>this.PickItem(name)}
+                    cutName={this.state.cutName}
                 />
                 <Menu
                     path={this.state.path}
                     active={this.state.active}
                     isActive={!!this.state.active}
-                    isPaste={!!this.state.cutItem||!!this.state.copyItem}
+                    isPaste={!!isPaste}
                     menu={this.state.menu}
-                    onAction={(action)=>this.handleMenuClick(action)}
+                    hideMenu={this.hideMenu}
+                    unPickItem={this.unPickItem}
+                    setCutName={this.setCutName}
+                    cutName={this.state.cutName}
                 />
             </div>
         )
@@ -100,9 +128,11 @@ var Cloud=React.createClass({
         getFileList(path, function (res) {
             that.setState({
                 loading: false,
-                file: res.file,
+                //file: res.file,
                 path: res.path.split('/')
             })
+            //Backbone处理
+            File.reset(res.file);
         }, function (res) {
             console.log('getFileList Error', res);
         })
@@ -111,7 +141,6 @@ var Cloud=React.createClass({
     PickItem(name){
         this.setState({
                 active: name,
-                newValue: name,
             }
         );
     },
@@ -154,6 +183,10 @@ var Cloud=React.createClass({
                 display: false
             }
         })
+    },
+    //设置剪切项
+    setCutName(name){
+        this.setState({cutName:name});
     }
 });
 
