@@ -6,7 +6,7 @@ import './index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import ActionModel from '../ActionModel'
 import {message,Modal} from 'antd';
-import {rename,mkdir,remove} from '../api';
+import {rename,mkdir,remove,cut,paste} from '../api';
 import {File,CopyItem} from '../backboneModel/model';
 
 var Menu=React.createClass({
@@ -47,6 +47,9 @@ var Menu=React.createClass({
                 >
                     <li key="newFolder" className="allow" onMouseDown={(e)=>this.handleMenuClick(e,'newFolder')}><span
                         className="fa fa-plus-circle"></span>新建文件夹
+                    </li>
+                    <li key="uploadFile" className="allow" onMouseDown={(e)=>this.handleMenuClick(e,'uploadFile')}><span
+                        className="fa fa-plus-circle"></span>上传文件
                     </li>
                     {nodes}
                 </ul>
@@ -102,37 +105,44 @@ var Menu=React.createClass({
                 this.afterFinished();
                 break;
             case 'paste':
-                //判断是否为剪切
-                if (this.props.cutName!='') {
-                    File.remove(File.findWhere(CopyItem.toJSON()));
+                //剪切
+                if (this.props.cutName!=='') {
+                    var obj=CopyItem.toJSON();
+
+                    obj['path']=this.props.path.join('/') + '/' + obj.name;
                     //调接口
-                    File.add(CopyItem.toJSON());
-                    this.props.setCutName('');
-                    CopyItem.clear();
-                    message.success('剪切成功', 5);
-                } else {
+                    this.cutFile(CopyItem.toJSON().path, obj.path);
+                }
+                //复制
+                else {
+                    var obj=CopyItem.toJSON(),
+                        name=obj.name.split('.')[0],
+                        path=this.props.path.join('/') + '/' + name,
+                        newPath=path;
                     //判断是否已经存在这个复制项了
-                    if (File.findWhere(CopyItem.toJSON())) {
+                    if (File.findWhere({name: obj.name})) {
                         var time=1;
-                        /****处理存在相同的文件名****/
-                        var obj=CopyItem.toJSON(),
-                            name=obj.name.split('.')[0],
-                            path=obj.path.split('.')[0];
+                            /****处理存在相同的文件名****/
+
+                        //path=obj.path.split('.')[0];
                         //直到找不到相同的为止
-                        while (File.findWhere(obj)) {
+                        while (File.findWhere({name: obj.name})) {
                             obj['name']=name + '(' + time + ')' + obj.ext;
-                            obj['path']=path + '(' + time + ')' + obj.ext;
+                            newPath=path + '(' + time + ')';
                             time++;
                         }
-                        //调接口
-                        File.add(obj);
-                    } else {
-                        //调接口
-                        File.add(CopyItem);
-                    }
-                    message.success('复制成功', 5);
+                }
+                    obj['path']=newPath+obj.ext;
+                    //
+                    console.log(CopyItem.toJSON().path, obj.path);
+                    //调复制的接口
+                    this.copyFile(CopyItem.toJSON().path, obj.path)
                 }
                 this.afterFinished();
+                break;
+            case 'uploadFile':
+                this.setState({newValue: "上传文件"});
+                this.showModel();
                 break;
             default:
                 break;
@@ -222,12 +232,39 @@ var Menu=React.createClass({
         })
     },
     //复制方法
-    copyFile(){
-
+    copyFile(old_path, new_path){
+        var query={old_path, new_path};
+        paste(query, function (res) {
+            console.log('paste success', res);
+            if(res.error==="file exists"){
+                message.error('复制失败，此文件夹有重复项', 5);
+                return
+            }
+            File.add(res);
+            message.success('复制成功', 5);
+        }, function (res) {
+            console.log('paste failed', res);
+            message.error('复制失败，请打开控制台查看错误信息', 5);
+        })
     },
     //剪切方法
-    cutFile(){
-
+    cutFile(old_path, new_path){
+        var query={old_path, new_path},
+            that=this;
+        cut(query, function (res) {
+            console.log('cut success', res);
+            if(res.error==="file exists"){
+                message.error('剪切失败，此文件夹有重复项', 5);
+                return
+            }
+            File.add(res);
+            that.props.setCutName('');
+            CopyItem.clear();
+            message.success('剪切成功', 5);
+        }, function (res) {
+            console.log('cut failed', res);
+            message.error('剪切失败，请打开控制台查看错误信息', 5);
+        })
     },
     //显示模态框
     showModel(){
