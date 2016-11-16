@@ -49,7 +49,7 @@ var Menu=React.createClass({
                         className="fa fa-plus-circle"></span>新建文件夹
                     </li>
                     <li key="uploadFile" className="allow" onMouseDown={(e)=>this.handleMenuClick(e,'uploadFile')}><span
-                        className="fa fa-plus-circle"></span>上传文件
+                        className="fa fa-cloud-upload"></span>上传文件
                     </li>
                     {nodes}
                 </ul>
@@ -61,6 +61,8 @@ var Menu=React.createClass({
                     onCancel={(e)=>this.hideModel()}
                     onChange={(e)=>this.setState({newValue:e.target.value})}
                     onOk={this.handleOk}
+                    path={this.props.path}
+                    afterFinished={this.afterFinished}
                 />
             </div>
 
@@ -85,6 +87,7 @@ var Menu=React.createClass({
                     content: '删除选中文件，是否确认要删除文件？',
                     onOk: this.handleOk,
                     onCancel: function () {
+                        return;
                     }
                 });
                 break;
@@ -122,8 +125,7 @@ var Menu=React.createClass({
                     //判断是否已经存在这个复制项了
                     if (File.findWhere({name: obj.name})) {
                         var time=1;
-                            /****处理存在相同的文件名****/
-
+                        /****处理存在相同的文件名****/
                         //path=obj.path.split('.')[0];
                         //直到找不到相同的为止
                         while (File.findWhere({name: obj.name})) {
@@ -131,9 +133,8 @@ var Menu=React.createClass({
                             newPath=path + '(' + time + ')';
                             time++;
                         }
-                }
-                    obj['path']=newPath+obj.ext;
-                    //
+                    }
+                    obj['path']=newPath + obj.ext;
                     console.log(CopyItem.toJSON().path, obj.path);
                     //调复制的接口
                     this.copyFile(CopyItem.toJSON().path, obj.path)
@@ -236,7 +237,7 @@ var Menu=React.createClass({
         var query={old_path, new_path};
         paste(query, function (res) {
             console.log('paste success', res);
-            if(res.error==="file exists"){
+            if (res.error==="file exists") {
                 message.error('复制失败，此文件夹有重复项', 5);
                 return
             }
@@ -253,7 +254,7 @@ var Menu=React.createClass({
             that=this;
         cut(query, function (res) {
             console.log('cut success', res);
-            if(res.error==="file exists"){
+            if (res.error==="file exists") {
                 message.error('剪切失败，此文件夹有重复项', 5);
                 return
             }

@@ -21,19 +21,25 @@ function getIcon(ext, isFolder) {
     }
     switch (ext) {
         case '.html':
-            return 'code'
+            return 'code';
         case '.css':
-            return 'code'
+            return 'code';
         case '.js':
-            return 'code'
+            return 'code';
         case '.jpg':
-            return 'picture'
+            return 'picture';
         case '.png':
-            return 'picture'
+            return 'picture';
         case '.gif':
-            return 'picture'
+            return 'picture';
+        case '.txt':
+            return "file-text";
+        case  '.pdf':
+            return "file-pdf";
+        case '.ppt':
+            return "file-ppt";
         default :
-            return 'frown-o'
+            return "file-unknown";
     }
 }
 
