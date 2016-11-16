@@ -10,7 +10,7 @@ import {File} from '../backboneModel/model';
 
 var ActionModel=React.createClass({
     render(){
-        const {visible,onCancel,newValue,onChange,onOk} = this.props;
+        const {visible,onCancel,newValue,onOk} = this.props;
         var title=this.getTitle(),
             Input=this.getInput(newValue);
         return (
@@ -58,9 +58,8 @@ var ActionModel=React.createClass({
                 description: info.file.name + '已经上传到' + this.props.path + '目录',
                 duration: 3
             });
-            this.props.afterFinished();
         } else if (info.file.status==='error') {
-            notification.success({
+            notification.error({
                 message: '上传失败',
                 description: info.file.name + '上传失败',
                 duration: 5
